@@ -1,6 +1,5 @@
 package com.khoi.swipebeats.explore
 
-
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,10 +16,12 @@ class ExploreViewModel : ViewModel() {
     fun onQueryChange(newQuery: String) {
         query = newQuery
 
-        uiState = if (newQuery.isBlank()) {
-            ExploreUiState.Empty
-        } else {
-            ExploreUiState.Content
+        val trimmedQuery = newQuery.trim()
+
+        uiState = when {
+            trimmedQuery.isEmpty() -> ExploreUiState.Empty
+            trimmedQuery.length < 2 -> ExploreUiState.Empty
+            else -> ExploreUiState.Content
         }
     }
 
