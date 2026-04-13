@@ -7,6 +7,44 @@ import androidx.lifecycle.ViewModel
 
 class ExploreViewModel : ViewModel() {
 
+    private val sampleTracks = listOf(
+        Track(
+            id = 1,
+            title = "Blinding Lights",
+            artistName = "The Weekend",
+            previewUrl = null,
+            artworkUrl = null
+        ),
+        Track(
+            id = 2,
+            title = "Levitating",
+            artistName = "Dua Lipa",
+            previewUrl = null,
+            artworkUrl = null
+        ),
+        Track(
+            id = 3,
+            title = "As It Was",
+            artistName = "Harry Styles",
+            previewUrl = null,
+            artworkUrl = null
+        ),
+        Track(
+            id = 4,
+            title = "Starboy",
+            artistName = "The Weekend",
+            previewUrl = null,
+            artworkUrl = null
+        ),
+        Track(
+            id = 5,
+            title = "Watermelon Sugar",
+            artistName = "Harry Styles",
+            previewUrl = null,
+            artworkUrl = null
+        )
+    )
+
     var query by mutableStateOf("")
         private set
 
@@ -18,26 +56,20 @@ class ExploreViewModel : ViewModel() {
 
         val trimmedQuery = newQuery.trim()
 
-        uiState = when {
-            trimmedQuery.isEmpty() -> ExploreUiState.Empty
-            trimmedQuery.length < 2 -> ExploreUiState.Empty
-            else -> ExploreUiState.Content
+        if (trimmedQuery.length < 2) {
+            uiState = ExploreUiState.Empty
+            return
         }
-    }
 
-    fun showLoading() {
-        uiState = ExploreUiState.Loading
-    }
+        val filteredTracks = sampleTracks.filter { track ->
+            track.title.contains(trimmedQuery, ignoreCase = true) ||
+                track.artistName.contains(trimmedQuery, ignoreCase = true)
+        }
 
-    fun showError(message: String) {
-        uiState = ExploreUiState.Error(message)
-    }
-
-    fun showContent() {
-        uiState = ExploreUiState.Content
-    }
-
-    fun showEmpty() {
-        uiState = ExploreUiState.Empty
+        uiState = if (filteredTracks.isEmpty()) {
+            ExploreUiState.Error("No tracks found for \"$trimmedQuery\"")
+        } else {
+            ExploreUiState.Content(filteredTracks)
+        }
     }
 }
