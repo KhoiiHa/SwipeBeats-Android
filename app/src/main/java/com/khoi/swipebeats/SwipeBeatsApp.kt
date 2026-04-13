@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.khoi.swipebeats.explore.ExploreScreen
 
 // Simple screen enum for MVP (no Navigation Compose yet)
 enum class BottomTab {
