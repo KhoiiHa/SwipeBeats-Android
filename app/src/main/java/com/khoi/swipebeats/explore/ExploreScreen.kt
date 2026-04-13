@@ -9,18 +9,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.khoi.swipebeats.explore.ExploreUiState
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun ExploreScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ExploreViewModel = viewModel()
 ) {
-    val query = remember { mutableStateOf("") }
-    val uiState = remember { mutableStateOf<ExploreUiState>(ExploreUiState.Empty) }
+    val query = viewModel.query
+    val uiState = viewModel.uiState
 
     Column(
         modifier = modifier
@@ -32,15 +31,15 @@ fun ExploreScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = query.value,
-            onValueChange = { query.value = it },
+            value = query,
+            onValueChange = viewModel::onQueryChange,
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Search for songs or artists") }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        when (val state = uiState.value) {
+        when (val state = uiState) {
             ExploreUiState.Empty -> {
                 Text(text = "No results yet")
             }
