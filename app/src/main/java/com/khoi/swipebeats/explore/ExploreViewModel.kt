@@ -5,13 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khoi.swipebeats.data.remote.RetrofitInstance
-import com.khoi.swipebeats.data.remote.toTrack
+import com.khoi.swipebeats.data.remote.ItunesRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ExploreViewModel : ViewModel() {
+
+    private val repository = ItunesRepository(api = com.khoi.swipebeats.data.remote.RetrofitInstance.api)
 
     var query by mutableStateOf("")
         private set
@@ -39,11 +40,7 @@ class ExploreViewModel : ViewModel() {
             delay(300)
 
             try {
-                val response = RetrofitInstance.api.searchTracks(query = trimmedQuery)
-
-                val tracks = response.results.mapNotNull { dto ->
-                    dto.toTrack()
-                }
+                val tracks = repository.searchTracks(query = trimmedQuery)
 
                 uiState = if (tracks.isEmpty()) {
                     ExploreUiState.Error("No tracks found for \"$trimmedQuery\"")
