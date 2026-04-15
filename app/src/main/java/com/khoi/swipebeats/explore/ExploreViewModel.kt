@@ -4,6 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ExploreViewModel : ViewModel() {
 
@@ -51,25 +55,35 @@ class ExploreViewModel : ViewModel() {
     var uiState by mutableStateOf<ExploreUiState>(ExploreUiState.Empty)
         private set
 
+    private var searchJob: Job? = null
+
     fun onQueryChange(newQuery: String) {
         query = newQuery
 
         val trimmedQuery = newQuery.trim()
+
+        searchJob?.cancel()
 
         if (trimmedQuery.length < 2) {
             uiState = ExploreUiState.Empty
             return
         }
 
-        val filteredTracks = sampleTracks.filter { track ->
-            track.title.contains(trimmedQuery, ignoreCase = true) ||
-                track.artistName.contains(trimmedQuery, ignoreCase = true)
-        }
+        uiState = ExploreUiState.Loading
 
-        uiState = if (filteredTracks.isEmpty()) {
-            ExploreUiState.Error("No tracks found for \"$trimmedQuery\"")
-        } else {
-            ExploreUiState.Content(filteredTracks)
+        searchJob = viewModelScope.launch {
+            delay(500)
+
+            val filteredTracks = sampleTracks.filter { track ->
+                track.title.contains(trimmedQuery, ignoreCase = true) ||
+                    track.artistName.contains(trimmedQuery, ignoreCase = true)
+            }
+
+            uiState = if (filteredTracks.isEmpty()) {
+                ExploreUiState.Error("No tracks found for \"$trimmedQuery\"")
+            } else {
+                ExploreUiState.Content(filteredTracks)
+            }
         }
     }
 }
