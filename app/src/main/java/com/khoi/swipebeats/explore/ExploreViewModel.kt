@@ -5,14 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.khoi.swipebeats.data.remote.ItunesRepository
+import com.khoi.swipebeats.data.ItunesRepository
+import com.khoi.swipebeats.data.remote.RetrofitInstance
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class ExploreViewModel : ViewModel() {
 
-    private val repository = ItunesRepository(api = com.khoi.swipebeats.data.remote.RetrofitInstance.api)
+    private val repository = ItunesRepository(api = RetrofitInstance.api)
 
     var query by mutableStateOf("")
         private set

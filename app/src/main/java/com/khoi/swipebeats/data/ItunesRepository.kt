@@ -1,5 +1,7 @@
-package com.khoi.swipebeats.data.remote
+package com.khoi.swipebeats.data
 
+import com.khoi.swipebeats.data.remote.ItunesApiService
+import com.khoi.swipebeats.data.remote.toTrack
 import com.khoi.swipebeats.explore.Track
 
 class ItunesRepository(
