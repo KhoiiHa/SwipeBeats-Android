@@ -1,8 +1,8 @@
-
 package com.khoi.swipebeats.player
 
 import android.content.Context
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 
 class PreviewPlayerManager(
@@ -12,6 +12,29 @@ class PreviewPlayerManager(
     private val player: ExoPlayer = ExoPlayer.Builder(context).build()
 
     private var currentPreviewUrl: String? = null
+
+    private var onIsPlayingChanged: ((Boolean) -> Unit)? = null
+
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            onIsPlayingChanged?.invoke(isPlaying)
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED) {
+                currentPreviewUrl = null
+                onIsPlayingChanged?.invoke(false)
+            }
+        }
+    }
+
+    init {
+        player.addListener(playerListener)
+    }
+
+    fun setOnIsPlayingChangedListener(listener: (Boolean) -> Unit) {
+        onIsPlayingChanged = listener
+    }
 
     fun isCurrentPreview(previewUrl: String?): Boolean {
         return currentPreviewUrl == previewUrl
@@ -48,11 +71,14 @@ class PreviewPlayerManager(
     fun stop() {
         player.stop()
         currentPreviewUrl = null
+        onIsPlayingChanged?.invoke(false)
     }
 
     fun release() {
+        player.removeListener(playerListener)
         player.release()
         currentPreviewUrl = null
+        onIsPlayingChanged?.invoke(false)
+        onIsPlayingChanged = null
     }
 }
-
