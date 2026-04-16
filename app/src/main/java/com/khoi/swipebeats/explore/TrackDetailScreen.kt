@@ -1,6 +1,6 @@
-
 package com.khoi.swipebeats.explore
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +23,7 @@ import coil.compose.AsyncImage
 @Composable
 fun TrackDetailScreen(
     track: Track,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -32,6 +33,15 @@ fun TrackDetailScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
+        Text(
+            text = "← Back",
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onBack() }
+                .padding(bottom = 16.dp),
+            style = MaterialTheme.typography.bodyMedium
+        )
+
         AsyncImage(
             model = track.artworkUrl,
             contentDescription = track.title,
@@ -75,4 +85,3 @@ fun TrackDetailScreen(
         }
     }
 }
-
