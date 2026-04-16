@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,10 +36,12 @@ fun TrackDetailScreen(
     val previewPlayerManager = remember {
         PreviewPlayerManager(context)
     }
+    val isPlayingState = remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose {
             previewPlayerManager.release()
+            isPlayingState.value = false
         }
     }
 
@@ -96,10 +99,19 @@ fun TrackDetailScreen(
             Button(
                 onClick = {
                     previewPlayerManager.playOrToggle(track.previewUrl)
+
+                    isPlayingState.value = previewPlayerManager.isCurrentPreview(track.previewUrl) &&
+                        previewPlayerManager.isPlaying()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Play / Pause Preview")
+                Text(
+                    text = if (isPlayingState.value) {
+                        "Pause Preview"
+                    } else {
+                        "Play Preview"
+                    }
+                )
             }
 
             Text(

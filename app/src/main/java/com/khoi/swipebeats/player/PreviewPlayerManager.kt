@@ -13,6 +13,14 @@ class PreviewPlayerManager(
 
     private var currentPreviewUrl: String? = null
 
+    fun isCurrentPreview(previewUrl: String?): Boolean {
+        return currentPreviewUrl == previewUrl
+    }
+
+    fun isPlaying(): Boolean {
+        return player.isPlaying
+    }
+
     fun playOrToggle(previewUrl: String?) {
         if (previewUrl.isNullOrBlank()) return
 
