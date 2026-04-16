@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import com.khoi.swipebeats.explore.ExploreScreen
 import com.khoi.swipebeats.explore.Track
 import com.khoi.swipebeats.explore.TrackDetailScreen
+import com.khoi.swipebeats.favorites.FavoritesScreen
 
 // Simple screen enum for MVP (no Navigation Compose yet)
 enum class BottomTab {
@@ -90,7 +91,11 @@ fun SwipeBeatsApp() {
                             selectedTrack = track
                         }
                     )
-                    BottomTab.FAVORITES -> Text("Favorites Screen")
+                    BottomTab.FAVORITES -> FavoritesScreen(
+                        onTrackClick = { track ->
+                            selectedTrack = track
+                        }
+                    )
                     BottomTab.PLAYLISTS -> Text("Playlists Screen")
                 }
             }
