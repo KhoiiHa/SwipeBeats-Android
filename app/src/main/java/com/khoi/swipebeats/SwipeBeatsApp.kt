@@ -77,7 +77,10 @@ fun SwipeBeatsApp() {
         ) {
             if (selectedTrack != null) {
                 TrackDetailScreen(
-                    track = selectedTrack!!
+                    track = selectedTrack!!,
+                    onBack = {
+                        selectedTrack = null
+                    }
                 )
             } else {
                 when (selectedTab) {
