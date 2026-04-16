@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 
 @Composable
 fun ExploreScreen(
+    onTrackClick: (Track) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExploreViewModel = viewModel()
 ) {
@@ -64,7 +65,12 @@ fun ExploreScreen(
                         items = state.tracks,
                         key = { track -> track.id }
                     ) { track ->
-                        TrackListItem(track = track)
+                        TrackListItem(
+                            track = track,
+                            onClick = {
+                                onTrackClick(track)
+                            }
+                        )
                     }
                 }
             }
