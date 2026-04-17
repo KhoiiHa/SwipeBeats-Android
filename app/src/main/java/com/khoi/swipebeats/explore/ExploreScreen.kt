@@ -71,6 +71,9 @@ fun ExploreScreen(
                             isFavorite = FavoriteTracksStore.isFavorite(track.id),
                             onClick = {
                                 onTrackClick(track)
+                            },
+                            onFavoriteClick = {
+                                FavoriteTracksStore.toggleFavorite(track)
                             }
                         )
                     }

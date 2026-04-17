@@ -54,6 +54,9 @@ fun FavoritesScreen(
                     isFavorite = true,
                     onClick = {
                         onTrackClick(track)
+                    },
+                    onFavoriteClick = {
+                        FavoriteTracksStore.toggleFavorite(track)
                     }
                 )
             }
