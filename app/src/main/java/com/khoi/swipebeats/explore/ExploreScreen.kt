@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.khoi.swipebeats.favorites.FavoriteTracksStore
 
 @Composable
 fun ExploreScreen(
@@ -67,6 +68,7 @@ fun ExploreScreen(
                     ) { track ->
                         TrackListItem(
                             track = track,
+                            isFavorite = FavoriteTracksStore.isFavorite(track.id),
                             onClick = {
                                 onTrackClick(track)
                             }

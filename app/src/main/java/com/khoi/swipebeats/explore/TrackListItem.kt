@@ -20,10 +20,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
 
 @Composable
 fun TrackListItem(
     track: Track,
+    isFavorite: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -49,7 +54,7 @@ fun TrackListItem(
             )
 
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = track.title,
@@ -64,6 +69,24 @@ fun TrackListItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            Icon(
+                imageVector = if (isFavorite) {
+                    Icons.Filled.Favorite
+                } else {
+                    Icons.Outlined.FavoriteBorder
+                },
+                contentDescription = if (isFavorite) {
+                    "Favorite track"
+                } else {
+                    "Not favorite track"
+                },
+                tint = if (isFavorite) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }

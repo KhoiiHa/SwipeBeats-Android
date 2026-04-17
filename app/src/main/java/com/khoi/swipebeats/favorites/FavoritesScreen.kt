@@ -1,4 +1,3 @@
-
 package com.khoi.swipebeats.favorites
 
 import androidx.compose.foundation.layout.Arrangement
@@ -52,6 +51,7 @@ fun FavoritesScreen(
             items(favoriteTracks) { track ->
                 TrackListItem(
                     track = track,
+                    isFavorite = true,
                     onClick = {
                         onTrackClick(track)
                     }
@@ -60,4 +60,3 @@ fun FavoritesScreen(
         }
     }
 }
-
