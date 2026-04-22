@@ -14,6 +14,7 @@ class PreviewPlayerManager(
     private var currentPreviewUrl: String? = null
 
     private var onIsPlayingChanged: ((Boolean) -> Unit)? = null
+    private var onCurrentPreviewChanged: ((String?) -> Unit)? = null
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -24,6 +25,7 @@ class PreviewPlayerManager(
             if (playbackState == Player.STATE_ENDED) {
                 currentPreviewUrl = null
                 onIsPlayingChanged?.invoke(false)
+                onCurrentPreviewChanged?.invoke(null)
             }
         }
     }
@@ -34,6 +36,10 @@ class PreviewPlayerManager(
 
     fun setOnIsPlayingChangedListener(listener: (Boolean) -> Unit) {
         onIsPlayingChanged = listener
+    }
+
+    fun setOnCurrentPreviewChangedListener(listener: (String?) -> Unit) {
+        onCurrentPreviewChanged = listener
     }
 
     fun isCurrentPreview(previewUrl: String?): Boolean {
@@ -57,6 +63,7 @@ class PreviewPlayerManager(
         }
 
         currentPreviewUrl = previewUrl
+        onCurrentPreviewChanged?.invoke(previewUrl)
 
         val mediaItem = MediaItem.fromUri(previewUrl)
         player.setMediaItem(mediaItem)
@@ -72,6 +79,7 @@ class PreviewPlayerManager(
         player.stop()
         currentPreviewUrl = null
         onIsPlayingChanged?.invoke(false)
+        onCurrentPreviewChanged?.invoke(null)
     }
 
     fun release() {
@@ -79,6 +87,8 @@ class PreviewPlayerManager(
         player.release()
         currentPreviewUrl = null
         onIsPlayingChanged?.invoke(false)
+        onCurrentPreviewChanged?.invoke(null)
         onIsPlayingChanged = null
+        onCurrentPreviewChanged = null
     }
 }

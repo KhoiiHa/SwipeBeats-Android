@@ -14,14 +14,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.khoi.swipebeats.player.PreviewPlayerManager
@@ -30,27 +26,13 @@ import com.khoi.swipebeats.favorites.FavoriteTracksStore
 @Composable
 fun TrackDetailScreen(
     track: Track,
+    previewPlayerManager: PreviewPlayerManager,
+    isPreviewPlaying: Boolean,
+    onPreviewTrackChanged: (Track?) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val previewPlayerManager = remember {
-        PreviewPlayerManager(context)
-    }
-    val isPlayingState = remember { mutableStateOf(false) }
-
     val isFavorite = FavoriteTracksStore.isFavorite(track.id)
-
-    DisposableEffect(previewPlayerManager, track.previewUrl) {
-        previewPlayerManager.setOnIsPlayingChangedListener { isPlaying ->
-            isPlayingState.value = previewPlayerManager.isCurrentPreview(track.previewUrl) && isPlaying
-        }
-
-        onDispose {
-            previewPlayerManager.release()
-            isPlayingState.value = false
-        }
-    }
 
     Column(
         modifier = modifier
@@ -122,11 +104,15 @@ fun TrackDetailScreen(
             Button(
                 onClick = {
                     previewPlayerManager.playOrToggle(track.previewUrl)
+
+                    if (track.previewUrl != null) {
+                        onPreviewTrackChanged(track)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if (isPlayingState.value) {
+                    text = if (isPreviewPlaying) {
                         "Pause Preview"
                     } else {
                         "Play Preview"
