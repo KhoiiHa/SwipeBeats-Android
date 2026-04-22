@@ -4,12 +4,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.LibraryMusic
@@ -99,6 +101,9 @@ fun SwipeBeatsApp() {
                         onTogglePlayback = {
                             previewPlayerManager.playOrToggle(previewTrack.previewUrl)
                         },
+                        onDismiss = {
+                            previewPlayerManager.stop()
+                        },
                         onOpenDetails = {
                             selectedTrack = previewTrack
                         }
@@ -181,6 +186,7 @@ private fun MiniPlayerBar(
     track: Track,
     isPlaying: Boolean,
     onTogglePlayback: () -> Unit,
+    onDismiss: () -> Unit,
     onOpenDetails: () -> Unit
 ) {
     Card(
@@ -203,6 +209,7 @@ private fun MiniPlayerBar(
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop
             )
+            Spacer(modifier = Modifier.size(12.dp))
 
             Column(
                 modifier = Modifier.weight(1f)
@@ -234,6 +241,13 @@ private fun MiniPlayerBar(
                     } else {
                         "Play preview"
                     }
+                )
+            }
+
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = "Close mini player"
                 )
             }
         }
