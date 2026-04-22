@@ -46,6 +46,7 @@ import com.khoi.swipebeats.explore.TrackDetailScreen
 import com.khoi.swipebeats.favorites.FavoriteTracksStore
 import com.khoi.swipebeats.favorites.FavoritesScreen
 import com.khoi.swipebeats.player.PreviewPlayerManager
+import com.khoi.swipebeats.swipe.SwipeScreen
 
 // Simple screen enum for MVP (no Navigation Compose yet)
 enum class BottomTab {
@@ -163,7 +164,7 @@ fun SwipeBeatsApp() {
                 )
             } else {
                 when (selectedTab) {
-                    BottomTab.SWIPE -> Text("Swipe Screen")
+                    BottomTab.SWIPE -> SwipeScreen()
                     BottomTab.EXPLORE -> ExploreScreen(
                         onTrackClick = { track ->
                             selectedTrack = track
@@ -192,21 +193,21 @@ private fun MiniPlayerBar(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onOpenDetails)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
                 model = track.artworkUrl,
                 contentDescription = track.title,
                 modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(14.dp)),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.size(12.dp))
@@ -229,26 +230,30 @@ private fun MiniPlayerBar(
                 )
             }
 
-            IconButton(onClick = onTogglePlayback) {
-                Icon(
-                    imageVector = if (isPlaying) {
-                        Icons.Outlined.Pause
-                    } else {
-                        Icons.Outlined.PlayArrow
-                    },
-                    contentDescription = if (isPlaying) {
-                        "Pause preview"
-                    } else {
-                        "Play preview"
-                    }
-                )
-            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onTogglePlayback) {
+                    Icon(
+                        imageVector = if (isPlaying) {
+                            Icons.Outlined.Pause
+                        } else {
+                            Icons.Outlined.PlayArrow
+                        },
+                        contentDescription = if (isPlaying) {
+                            "Pause preview"
+                        } else {
+                            "Play preview"
+                        }
+                    )
+                }
 
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = "Close mini player"
-                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "Close mini player"
+                    )
+                }
             }
         }
     }
