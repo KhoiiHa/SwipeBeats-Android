@@ -2,6 +2,7 @@ package com.khoi.swipebeats.swipe
 
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.zIndex
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Favorite
@@ -32,8 +34,21 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.khoi.swipebeats.explore.Track
 
+import androidx.compose.runtime.LaunchedEffect
+import com.khoi.swipebeats.player.PreviewPlayerManager
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+
 @Composable
-fun SwipeScreen() {
+fun SwipeScreen(
+    previewPlayerManager: PreviewPlayerManager,
+    onPreviewTrackChanged: (Track?) -> Unit
+) {
 
     val mockTracks = listOf(
         Track(
@@ -97,15 +112,29 @@ fun SwipeScreen() {
     var currentIndex by remember { mutableStateOf(0) }
     var likedTrackIds by remember { mutableStateOf(setOf<Long>()) }
     var rejectedTrackIds by remember { mutableStateOf(setOf<Long>()) }
-    var offsetX by remember { mutableStateOf(0f) }
+    var isAnimating by remember { mutableStateOf(false) }
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
 
     val currentTrack = mockTracks.getOrNull(currentIndex)
+
+    LaunchedEffect(currentTrack?.id) {
+        previewPlayerManager.stop()
+        if (currentTrack?.previewUrl != null) {
+            onPreviewTrackChanged(currentTrack)
+            previewPlayerManager.playPreview(currentTrack.previewUrl)
+        } else {
+            onPreviewTrackChanged(null)
+        }
+    }
 
     fun showNextTrack() {
         if (currentIndex < mockTracks.lastIndex) {
             currentIndex += 1
         }
-        offsetX = 0f
+        scope.launch {
+            offsetX.snapTo(0f)
+        }
     }
 
     fun likeCurrentTrack() {
@@ -165,77 +194,198 @@ fun SwipeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .graphicsLayer {
-                    translationX = offsetX
-                    rotationZ = offsetX / 40f
-                }
-                .pointerInput(currentTrack.id) {
-                    detectDragGestures(
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            offsetX += dragAmount.x
-                        },
-                        onDragEnd = {
-                            when {
-                                offsetX > swipeThreshold -> likeCurrentTrack()
-                                offsetX < -swipeThreshold -> rejectCurrentTrack()
-                                else -> offsetX = 0f
-                            }
-                        }
-                    )
-                },
-            shape = RoundedCornerShape(20.dp)
+                .weight(1f),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            // Background Card (next track)
+            if (currentIndex < mockTracks.lastIndex) {
+                val nextTrack = mockTracks[currentIndex + 1]
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            val progress = (abs(offsetX.value) / swipeThreshold).coerceIn(0f, 1f)
+                            scaleX = 0.95f + (progress * 0.05f)
+                            scaleY = 0.95f + (progress * 0.05f)
+                            translationY = 20f * (1f - progress)
+                        },
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        AsyncImage(
+                            model = nextTrack.artworkUrl,
+                            contentDescription = nextTrack.title,
+                            modifier = Modifier.size(220.dp),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Text(
+                            text = nextTrack.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 20.dp)
+                        )
+
+                        Text(
+                            text = nextTrack.artistName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            // Top Card (current track)
+            Card(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .fillMaxWidth()
+                    .zIndex(1f)
+                    .graphicsLayer {
+                        translationX = offsetX.value
+                        rotationZ = offsetX.value / 40f
+                    }
+                    .pointerInput(currentTrack.id) {
+                        detectDragGestures(
+                            onDrag = { change, dragAmount ->
+                                if (!isAnimating) {
+                                    change.consume()
+                                    scope.launch {
+                                        offsetX.snapTo(offsetX.value + dragAmount.x)
+                                    }
+                                }
+                            },
+                            onDragEnd = {
+                                if (!isAnimating) {
+                                    when {
+                                        offsetX.value > swipeThreshold -> {
+                                            isAnimating = true
+                                            scope.launch {
+                                                try {
+                                                    offsetX.animateTo(
+                                                        targetValue = 1000f,
+                                                        animationSpec = spring(stiffness = Spring.StiffnessLow)
+                                                    )
+                                                    previewPlayerManager.stop()
+                                                    likeCurrentTrack()
+                                                } finally {
+                                                    isAnimating = false
+                                                }
+                                            }
+                                        }
+                                        offsetX.value < -swipeThreshold -> {
+                                            isAnimating = true
+                                            scope.launch {
+                                                try {
+                                                    offsetX.animateTo(
+                                                        targetValue = -1000f,
+                                                        animationSpec = spring(stiffness = Spring.StiffnessLow)
+                                                    )
+                                                    previewPlayerManager.stop()
+                                                    rejectCurrentTrack()
+                                                } finally {
+                                                    isAnimating = false
+                                                }
+                                            }
+                                        }
+                                        else -> {
+                                            isAnimating = true
+                                            scope.launch {
+                                                try {
+                                                    offsetX.animateTo(
+                                                        targetValue = 0f,
+                                                        animationSpec = spring(
+                                                            stiffness = Spring.StiffnessMedium,
+                                                            dampingRatio = Spring.DampingRatioMediumBouncy
+                                                        )
+                                                    )
+                                                } finally {
+                                                    isAnimating = false
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    },
+                shape = RoundedCornerShape(20.dp)
             ) {
-                if (offsetX > 40f) {
-                    Text(
-                        text = "LIKE",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    val swipeProgress = (abs(offsetX.value) / swipeThreshold).coerceIn(0f, 1f)
+                    if (offsetX.value > 40f) {
+                        Text(
+                            text = "LIKE",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(bottom = 12.dp)
+                                .graphicsLayer {
+                                    alpha = swipeProgress
+                                    scaleX = 1f + (swipeProgress * 0.3f)
+                                    scaleY = 1f + (swipeProgress * 0.3f)
+                                    rotationZ = offsetX.value / 20f
+                                }
+                        )
+                    } else if (offsetX.value < -40f) {
+                        Text(
+                            text = "NOPE",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .padding(bottom = 12.dp)
+                                .graphicsLayer {
+                                    alpha = swipeProgress
+                                    scaleX = 1f + (swipeProgress * 0.3f)
+                                    scaleY = 1f + (swipeProgress * 0.3f)
+                                    rotationZ = offsetX.value / 20f
+                                }
+                        )
+                    }
+
+                    AsyncImage(
+                        model = currentTrack.artworkUrl,
+                        contentDescription = currentTrack.title,
+                        modifier = Modifier.size(220.dp),
+                        contentScale = ContentScale.Crop
                     )
-                } else if (offsetX < -40f) {
+
                     Text(
-                        text = "NOPE",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        text = currentTrack.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 20.dp)
+                    )
+
+                    Text(
+                        text = currentTrack.artistName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 6.dp)
                     )
                 }
-
-                AsyncImage(
-                    model = currentTrack.artworkUrl,
-                    contentDescription = currentTrack.title,
-                    modifier = Modifier.size(220.dp),
-                    contentScale = ContentScale.Crop
-                )
-
-                Text(
-                    text = currentTrack.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 20.dp)
-                )
-
-                Text(
-                    text = currentTrack.artistName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
             }
         }
 
@@ -253,7 +403,24 @@ fun SwipeScreen() {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = { rejectCurrentTrack() }) {
+            Button(
+                enabled = !isAnimating,
+                onClick = {
+                    isAnimating = true
+                    scope.launch {
+                        try {
+                            offsetX.animateTo(
+                                targetValue = -1000f,
+                                animationSpec = spring(stiffness = Spring.StiffnessLow)
+                            )
+                            previewPlayerManager.stop()
+                            rejectCurrentTrack()
+                        } finally {
+                            isAnimating = false
+                        }
+                    }
+                }
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.Icon(
                         imageVector = Icons.Outlined.Close,
@@ -263,7 +430,24 @@ fun SwipeScreen() {
                 }
             }
 
-            Button(onClick = { likeCurrentTrack() }) {
+            Button(
+                enabled = !isAnimating,
+                onClick = {
+                    isAnimating = true
+                    scope.launch {
+                        try {
+                            offsetX.animateTo(
+                                targetValue = 1000f,
+                                animationSpec = spring(stiffness = Spring.StiffnessLow)
+                            )
+                            previewPlayerManager.stop()
+                            likeCurrentTrack()
+                        } finally {
+                            isAnimating = false
+                        }
+                    }
+                }
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.Icon(
                         imageVector = Icons.Outlined.Favorite,

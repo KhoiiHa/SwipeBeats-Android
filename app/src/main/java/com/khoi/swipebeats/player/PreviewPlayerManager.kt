@@ -56,12 +56,32 @@ class PreviewPlayerManager(
         if (currentPreviewUrl == previewUrl) {
             if (player.isPlaying) {
                 player.pause()
+                onIsPlayingChanged?.invoke(false)
             } else {
                 player.play()
             }
             return
         }
 
+        player.stop()
+        player.clearMediaItems()
+        currentPreviewUrl = previewUrl
+        onCurrentPreviewChanged?.invoke(previewUrl)
+
+        val mediaItem = MediaItem.fromUri(previewUrl)
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.play()
+    }
+
+    fun playPreview(previewUrl: String?) {
+        if (previewUrl.isNullOrBlank()) return
+
+        // avoid restarting same preview if already playing
+        if (currentPreviewUrl == previewUrl && player.isPlaying) return
+
+        player.stop()
+        player.clearMediaItems()
         currentPreviewUrl = previewUrl
         onCurrentPreviewChanged?.invoke(previewUrl)
 
@@ -73,10 +93,12 @@ class PreviewPlayerManager(
 
     fun pause() {
         player.pause()
+        onIsPlayingChanged?.invoke(false)
     }
 
     fun stop() {
         player.stop()
+        player.clearMediaItems()
         currentPreviewUrl = null
         onIsPlayingChanged?.invoke(false)
         onCurrentPreviewChanged?.invoke(null)

@@ -80,9 +80,6 @@ fun SwipeBeatsApp() {
             if (previewUrl == null) {
                 currentPreviewTrack = null
                 isMiniPlayerPlaying = false
-            } else if (currentPreviewTrack?.previewUrl != previewUrl) {
-                currentPreviewTrack = selectedTrack?.takeIf { it.previewUrl == previewUrl }
-                    ?: currentPreviewTrack
             }
         }
 
@@ -164,7 +161,12 @@ fun SwipeBeatsApp() {
                 )
             } else {
                 when (selectedTab) {
-                    BottomTab.SWIPE -> SwipeScreen()
+                    BottomTab.SWIPE -> SwipeScreen(
+                        previewPlayerManager = previewPlayerManager,
+                        onPreviewTrackChanged = { track ->
+                            currentPreviewTrack = track
+                        }
+                    )
                     BottomTab.EXPLORE -> ExploreScreen(
                         onTrackClick = { track ->
                             selectedTrack = track
