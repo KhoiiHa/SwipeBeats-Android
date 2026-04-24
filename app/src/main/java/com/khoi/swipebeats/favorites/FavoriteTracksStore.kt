@@ -60,6 +60,18 @@ object FavoriteTracksStore {
         }
     }
 
+    fun addFavorite(track: Track) {
+        if (!isInitialized) return
+
+        val favoriteTrackDao = FavoritesDatabase
+            .getInstance(applicationContext)
+            .favoriteTrackDao()
+
+        scope.launch {
+            favoriteTrackDao.insertFavoriteTrack(track.toFavoriteTrackEntity())
+        }
+    }
+
     fun getFavorites(): List<Track> {
         return favoriteTracksState.value
     }

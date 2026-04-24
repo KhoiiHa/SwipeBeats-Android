@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.khoi.swipebeats.explore.Track
+import com.khoi.swipebeats.favorites.FavoriteTracksStore
 import com.khoi.swipebeats.player.PreviewPlayerManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -73,6 +74,7 @@ fun SwipeScreen(
 
     val tracks = swipeViewModel.tracks
     val isLoading = swipeViewModel.isLoading
+    val errorMessage = swipeViewModel.errorMessage
     val currentTrack = swipeViewModel.currentTrack
     val nextTrack = swipeViewModel.nextTrack
     val likedTrackIds = swipeViewModel.likedTrackIds
@@ -91,6 +93,9 @@ fun SwipeScreen(
     }
 
     fun likeCurrentTrack() {
+        currentTrack?.let { track ->
+            FavoriteTracksStore.addFavorite(track)
+        }
         swipeViewModel.likeCurrentTrack()
         resetCardOffset()
     }
@@ -108,6 +113,40 @@ fun SwipeScreen(
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (!isLoading && errorMessage != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center
+            )
+
+            Text(
+                text = "Bitte versuche es später erneut.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Button(
+                onClick = {
+                    swipeViewModel.loadTracks(term = "pop", limit = 20)
+                },
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                Text(text = "Erneut versuchen")
+            }
         }
         return
     }

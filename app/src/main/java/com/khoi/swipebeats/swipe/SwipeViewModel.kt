@@ -19,6 +19,9 @@ class SwipeViewModel(
     var isLoading by mutableStateOf(false)
         private set
 
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
+
     var currentIndex by mutableStateOf(0)
         private set
 
@@ -41,6 +44,7 @@ class SwipeViewModel(
 
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
 
             try {
                 val loadedTracks = repository.searchSongs(
@@ -49,11 +53,13 @@ class SwipeViewModel(
                 )
 
                 tracks = loadedTracks
+                errorMessage = null
                 currentIndex = 0
                 likedTrackIds = emptySet()
                 rejectedTrackIds = emptySet()
             } catch (exception: Exception) {
                 tracks = emptyList()
+                errorMessage = "Tracks konnten nicht geladen werden."
                 currentIndex = 0
                 likedTrackIds = emptySet()
                 rejectedTrackIds = emptySet()
