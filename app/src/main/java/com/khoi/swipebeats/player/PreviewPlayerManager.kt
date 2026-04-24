@@ -1,5 +1,8 @@
 package com.khoi.swipebeats.player
 
+import android.os.Handler
+import android.os.Looper
+
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -17,12 +20,35 @@ class PreviewPlayerManager(
     private var currentPreviewUrl by mutableStateOf<String?>(null)
     private var isPlayingState by mutableStateOf(false)
 
+    private var currentPositionState by mutableStateOf(0L)
+    private var durationState by mutableStateOf(0L)
+    private var progressState by mutableStateOf(0f)
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            val position = player.currentPosition
+            val duration = if (player.duration > 0) player.duration else 0L
+
+            currentPositionState = position
+            durationState = duration
+            progressState = if (duration > 0) position.toFloat() / duration else 0f
+
+            handler.postDelayed(this, 500)
+        }
+    }
+
     private var onIsPlayingChanged: ((Boolean) -> Unit)? = null
     private var onCurrentPreviewChanged: ((String?) -> Unit)? = null
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             isPlayingState = isPlaying
+            if (isPlaying) {
+                handler.post(progressRunnable)
+            } else {
+                handler.removeCallbacks(progressRunnable)
+            }
             onIsPlayingChanged?.invoke(isPlaying)
         }
 
@@ -30,6 +56,8 @@ class PreviewPlayerManager(
             if (playbackState == Player.STATE_ENDED) {
                 currentPreviewUrl = null
                 isPlayingState = false
+                handler.removeCallbacks(progressRunnable)
+                progressState = 0f
                 onIsPlayingChanged?.invoke(false)
                 onCurrentPreviewChanged?.invoke(null)
             }
@@ -66,6 +94,7 @@ class PreviewPlayerManager(
                 onIsPlayingChanged?.invoke(false)
             } else {
                 player.play()
+                handler.post(progressRunnable)
             }
             return
         }
@@ -79,6 +108,7 @@ class PreviewPlayerManager(
         player.setMediaItem(mediaItem)
         player.prepare()
         player.play()
+        handler.post(progressRunnable)
     }
 
     fun playPreview(previewUrl: String?) {
@@ -109,6 +139,8 @@ class PreviewPlayerManager(
         player.clearMediaItems()
         currentPreviewUrl = null
         isPlayingState = false
+        handler.removeCallbacks(progressRunnable)
+        progressState = 0f
         onIsPlayingChanged?.invoke(false)
         onCurrentPreviewChanged?.invoke(null)
     }
@@ -118,9 +150,14 @@ class PreviewPlayerManager(
         player.release()
         currentPreviewUrl = null
         isPlayingState = false
+        handler.removeCallbacks(progressRunnable)
         onIsPlayingChanged?.invoke(false)
         onCurrentPreviewChanged?.invoke(null)
         onIsPlayingChanged = null
         onCurrentPreviewChanged = null
     }
+
+    fun getProgress(): Float = progressState
+    fun getCurrentPosition(): Long = currentPositionState
+    fun getDuration(): Long = durationState
 }
