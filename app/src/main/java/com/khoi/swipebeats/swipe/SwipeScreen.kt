@@ -14,6 +14,8 @@ import androidx.compose.ui.zIndex
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -65,16 +67,16 @@ fun SwipeScreen(
         }
     )
 
-    var currentIndex by remember { mutableStateOf(0) }
-    var likedTrackIds by remember { mutableStateOf(setOf<Long>()) }
-    var rejectedTrackIds by remember { mutableStateOf(setOf<Long>()) }
     var isAnimating by remember { mutableStateOf(false) }
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
     val tracks = swipeViewModel.tracks
     val isLoading = swipeViewModel.isLoading
-    val currentTrack = tracks.getOrNull(currentIndex)
+    val currentTrack = swipeViewModel.currentTrack
+    val nextTrack = swipeViewModel.nextTrack
+    val likedTrackIds = swipeViewModel.likedTrackIds
+    val rejectedTrackIds = swipeViewModel.rejectedTrackIds
 
     LaunchedEffect(Unit) {
         if (tracks.isEmpty()) {
@@ -82,29 +84,20 @@ fun SwipeScreen(
         }
     }
 
-    fun showNextTrack() {
-        if (currentIndex < tracks.lastIndex) {
-            currentIndex += 1
-        }
+    fun resetCardOffset() {
         scope.launch {
             offsetX.snapTo(0f)
         }
     }
 
     fun likeCurrentTrack() {
-        currentTrack?.let { track ->
-            likedTrackIds = likedTrackIds + track.id
-            rejectedTrackIds = rejectedTrackIds - track.id
-        }
-        showNextTrack()
+        swipeViewModel.likeCurrentTrack()
+        resetCardOffset()
     }
 
     fun rejectCurrentTrack() {
-        currentTrack?.let { track ->
-            rejectedTrackIds = rejectedTrackIds + track.id
-            likedTrackIds = likedTrackIds - track.id
-        }
-        showNextTrack()
+        swipeViewModel.rejectCurrentTrack()
+        resetCardOffset()
     }
 
     val swipeThreshold = 160f
@@ -165,8 +158,7 @@ fun SwipeScreen(
             contentAlignment = Alignment.Center
         ) {
             // Background Card (next track)
-            if (currentIndex < tracks.lastIndex) {
-                val nextTrack = tracks[currentIndex + 1]
+            if (nextTrack != null) {
 
                 Card(
                     modifier = Modifier
@@ -349,6 +341,31 @@ fun SwipeScreen(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 6.dp)
                     )
+
+                    val isCurrentPreviewPlaying =
+                        previewPlayerManager.isCurrentPreview(currentTrack.previewUrl) && previewPlayerManager.isPlaying()
+
+                    Button(
+                        enabled = !isAnimating && currentTrack.previewUrl != null,
+                        onClick = {
+                            currentTrack.previewUrl?.let { previewUrl ->
+                                onPreviewTrackChanged(currentTrack)
+                                previewPlayerManager.playOrToggle(previewUrl)
+                            }
+                        },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Icon(
+                                imageVector = if (isCurrentPreviewPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                                contentDescription = if (isCurrentPreviewPlaying) "Pause preview" else "Play preview"
+                            )
+                            Text(
+                                text = if (isCurrentPreviewPlaying) "Pause" else "Preview",
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
+                    }
                 }
             }
         }

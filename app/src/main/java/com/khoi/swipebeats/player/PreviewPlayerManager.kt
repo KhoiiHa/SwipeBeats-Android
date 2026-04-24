@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 class PreviewPlayerManager(
     context: Context
@@ -11,19 +14,22 @@ class PreviewPlayerManager(
 
     private val player: ExoPlayer = ExoPlayer.Builder(context).build()
 
-    private var currentPreviewUrl: String? = null
+    private var currentPreviewUrl by mutableStateOf<String?>(null)
+    private var isPlayingState by mutableStateOf(false)
 
     private var onIsPlayingChanged: ((Boolean) -> Unit)? = null
     private var onCurrentPreviewChanged: ((String?) -> Unit)? = null
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            isPlayingState = isPlaying
             onIsPlayingChanged?.invoke(isPlaying)
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
                 currentPreviewUrl = null
+                isPlayingState = false
                 onIsPlayingChanged?.invoke(false)
                 onCurrentPreviewChanged?.invoke(null)
             }
@@ -47,7 +53,7 @@ class PreviewPlayerManager(
     }
 
     fun isPlaying(): Boolean {
-        return player.isPlaying
+        return isPlayingState
     }
 
     fun playOrToggle(previewUrl: String?) {
@@ -56,6 +62,7 @@ class PreviewPlayerManager(
         if (currentPreviewUrl == previewUrl) {
             if (player.isPlaying) {
                 player.pause()
+                isPlayingState = false
                 onIsPlayingChanged?.invoke(false)
             } else {
                 player.play()
@@ -93,6 +100,7 @@ class PreviewPlayerManager(
 
     fun pause() {
         player.pause()
+        isPlayingState = false
         onIsPlayingChanged?.invoke(false)
     }
 
@@ -100,6 +108,7 @@ class PreviewPlayerManager(
         player.stop()
         player.clearMediaItems()
         currentPreviewUrl = null
+        isPlayingState = false
         onIsPlayingChanged?.invoke(false)
         onCurrentPreviewChanged?.invoke(null)
     }
@@ -108,6 +117,7 @@ class PreviewPlayerManager(
         player.removeListener(playerListener)
         player.release()
         currentPreviewUrl = null
+        isPlayingState = false
         onIsPlayingChanged?.invoke(false)
         onCurrentPreviewChanged?.invoke(null)
         onIsPlayingChanged = null

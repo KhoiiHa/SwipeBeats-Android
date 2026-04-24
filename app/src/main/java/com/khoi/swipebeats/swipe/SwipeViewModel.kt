@@ -19,6 +19,21 @@ class SwipeViewModel(
     var isLoading by mutableStateOf(false)
         private set
 
+    var currentIndex by mutableStateOf(0)
+        private set
+
+    var likedTrackIds by mutableStateOf(setOf<Long>())
+        private set
+
+    var rejectedTrackIds by mutableStateOf(setOf<Long>())
+        private set
+
+    val currentTrack: Track?
+        get() = tracks.getOrNull(currentIndex)
+
+    val nextTrack: Track?
+        get() = tracks.getOrNull(currentIndex + 1)
+
     fun loadTracks(term: String, limit: Int = 20) {
         val trimmedTerm = term.trim()
 
@@ -27,12 +42,48 @@ class SwipeViewModel(
         viewModelScope.launch {
             isLoading = true
 
-            tracks = repository.searchSongs(
-                term = trimmedTerm,
-                limit = limit
-            )
+            try {
+                val loadedTracks = repository.searchSongs(
+                    term = trimmedTerm,
+                    limit = limit
+                )
 
-            isLoading = false
+                tracks = loadedTracks
+                currentIndex = 0
+                likedTrackIds = emptySet()
+                rejectedTrackIds = emptySet()
+            } catch (exception: Exception) {
+                tracks = emptyList()
+                currentIndex = 0
+                likedTrackIds = emptySet()
+                rejectedTrackIds = emptySet()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun likeCurrentTrack() {
+        val track = currentTrack ?: return
+
+        likedTrackIds = likedTrackIds + track.id
+        rejectedTrackIds = rejectedTrackIds - track.id
+        moveToNextTrack()
+    }
+
+    fun rejectCurrentTrack() {
+        val track = currentTrack ?: return
+
+        rejectedTrackIds = rejectedTrackIds + track.id
+        likedTrackIds = likedTrackIds - track.id
+        moveToNextTrack()
+    }
+
+    private fun moveToNextTrack() {
+        if (currentIndex < tracks.lastIndex) {
+            currentIndex += 1
+        } else {
+            currentIndex = tracks.size
         }
     }
 }
