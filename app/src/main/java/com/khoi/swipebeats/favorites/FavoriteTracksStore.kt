@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object FavoriteTracksStore {
 
@@ -30,8 +31,12 @@ object FavoriteTracksStore {
 
         scope.launch {
             dao.getFavoriteTracks().collectLatest { favoriteEntities ->
-                favoriteTracksState.value = favoriteEntities.map { entity ->
+                val favoriteTracks = favoriteEntities.map { entity ->
                     entity.toTrack()
+                }
+
+                withContext(Dispatchers.Main) {
+                    favoriteTracksState.value = favoriteTracks
                 }
             }
         }
